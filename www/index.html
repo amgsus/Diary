@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <title>Diary</title>
+    <link rel="stylesheet" href="/3rd/bootstrap.min.css">
+    <link rel="stylesheet" href="/3rd/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-dark-subtle">
+    <div class="h-100 d-flex align-items-center justify-content-center">
+        <div class="w-50">
+            <p class="fs-3">My Diary</p>
+            <label for="note" class="mb-1">Enter a note and click "Write" to store it.</label>
+            <textarea class="form-control" id="note" rows="15"></textarea>
+            <div class="d-flex justify-content-end my-2">
+                <div class="align-self-center me-3">
+                    <span class="text-secondary">Minimum length - 10 characters.</span>
+                </div>               
+                <button type="button" id="btnWrite" onclick="app.buttonHandler()" class="btn btn-primary"><i class="bi bi-pencil"></i> Write</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BEGIN: Toast -->
+    
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header text-primary">
+                <i class="bi bi-info-square me-2"></i>
+                <strong class="me-auto" id="toastTitle">...</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Hide"></button>
+            </div>
+            <div class="toast-body" id="toastMsg">
+                ...
+            </div>
+        </div>
+    </div>
+
+    <!-- END: Toast -->
+
+    <script src="/3rd/bootstrap.bundle.min.js"></script>
+    <script src="/3rd/axios.min.js"></script>
+    <script src="/3rd/jquery-3.7.1.js"></script>
+
+    <script src="/script/toast.js"></script>
+
+    <script>
+        const app = (() => {
+            const jqNote = $('textarea#note');            
+
+            const MIN_LENGTH = 10;
+
+            let saveInProgress = false;
+
+            const send = (note) => {
+                saveInProgress = true;
+
+                const h = (err, response) => {
+                    saveInProgress = false;
+                    return err ? err : response;
+                };
+
+                let data = {
+                    note
+                };
+
+                return axios({
+                    method: 'post',
+                    url: '/api/notes',
+                    data
+                }).then((response) => h(null, response.data)).catch(h);
+            };
+
+            const buttonHandler = () => {
+                let note = jqNote.val();
+
+                if (!note || note.length < MIN_LENGTH) {
+                    console.log(`Note is too small (${note.length}).`);
+                    return;
+                }
+
+                const h = (err, data) => {
+                    if (err) {
+                        agToast.show({
+                            title: 'Error',
+                            msg: 'Error has occurred during save: ' + err.message
+                        });
+                    } else {
+                        agToast.show({
+                            title: 'Saved',
+                            msg: `Note #${data?.id} has been written!`
+                        });
+                        jqNote.val('');
+                    }
+                };
+
+                send(note).then((data) => h(null, data)).catch(h);
+            };
+
+            return { buttonHandler };
+        })();
+    </script>
+
+    <style>
+        html, body {
+            height: 100%;
+        }
+    </style>
+</body>
+
+</html>

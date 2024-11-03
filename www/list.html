@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <title>View - My Diary</title>
+    <link rel="stylesheet" href="/3rd/bootstrap.min.css">
+    <link rel="stylesheet" href="/3rd/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-dark-subtle">
+    <div class="container">
+        <div class="row m-3">
+            <div class="container" id="history">
+                <!-- AJAX -->
+                <p class="">No notes yet</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/3rd/bootstrap.bundle.min.js"></script>
+    <script src="/3rd/axios.min.js"></script>
+    <script src="/3rd/jquery-3.7.1.js"></script>
+
+    <script>
+        setTimeout(init, 0);
+
+        function
+        confirmDelete(id)
+        {
+            axios({
+                method: 'delete',
+                url: `/api/note/${id}`
+            }).then(({ status }) => {
+                if (status == 200) {
+                    $(`div#note-${id}`).remove();
+                    console.log(`Note #${id} has been deleted.`);
+                }
+            }).catch(console.error);
+        }
+
+        function
+        getRowHTML(data)
+        {
+            let ts = new Date(data.timestamp).toLocaleString();
+
+            let text = data.note.replace(/\r?\n/g, '<br/>'); // Replace new line sequence with HTML tag
+
+            const template = `               
+                <div class="d-flex flex-column" id="note-${data.id}">
+                    <div class="d-flex flex-row justify-content-between">
+                        <div class="align-self-start">
+                            <a href="#">#${data.id}</a>
+                        </div>
+                        <div class="align-self-start">
+                            ${ts}
+                        </div>
+                        <div class="align-self-end">
+                            <a href="#" onclick="confirmDelete(${data.id})"><!--<i class="bi bi-file-x"></i>-->Delete</a>   
+                        </div>
+                    </div>
+                    <div>
+                        ${text}
+                    </div>
+                </div>
+                <hr class="bg-danger border-2 border-top border-secondary" />
+            `;
+
+            return template;
+        }
+
+        function
+        init()
+        {
+            axios({
+                method: 'get',
+                url: '/api/notes'
+            }).then(({ data, status }) => {
+                if (status != 200) {
+                    console.log(`Unexpected status code (${status}). Load aborted!`);
+                    return;
+                }
+
+                if (!data.length) return; // data is array of notes
+
+                let html = "";
+
+                for ( let note of data ) {
+                    let row = getRowHTML(note);
+                    html += row;
+                }
+
+                $('div#history').html(html);
+
+                console.log(`Loaded ${data.length} notes.`);
+            }).catch(console.error);
+        }
+    </script>
+
+</body>
+
+</html>
